@@ -1,6 +1,6 @@
 import java.time.LocalDate;
-import java.time.format.DateTimeFormatter;
 import java.util.Arrays;
+import java.util.Locale;
 
 public class EventProcessor {
     public static void main(String[] args) {
@@ -15,25 +15,26 @@ public class EventProcessor {
                 new Event(LocalDate.of(2020, 11, 12), "macOS 11 Big Sur released", macosCategory)
         };
 
-        // Print each event in the specified format
         for (Event event : events) {
             LocalDate date = event.getDate();
             String description = event.getDescription();
-            String version = description.split(" ")[1]; // e.g., "15"
-            String name = description.substring(description.indexOf(" ", description.indexOf(" ") + 1) + 1, description.lastIndexOf(" released"));
-            String weekday = date.format(DateTimeFormatter.ofPattern("EEEE")); // Directly get "Monday", "Tuesday", etc.
 
-            System.out.printf("macOS %s %s was released on a %s%n", version, name, weekday);
+            // Split description more cleanly: "macOS <version> <name> released"
+            String[] parts = description.split(" ", 4); // Ensure "Big Sur" stays together
+            String version = parts[1]; // macOS version number
+            String name = parts[2] + (parts.length > 3 ? " " + parts[3].replace(" released", "") : ""); // Keep multi-word names intact
+
+            // Print using simpler weekday formatting and lowercase conversion
+            System.out.printf(Locale.US, "macOS %s %s was released on a %s%n",
+                    version, name, String.format(Locale.US, "%tA", date).toLowerCase());
         }
 
-        // Extract operating system names and sort alphabetically
-        String[] osNames = new String[events.length];
-        for (int i = 0; i < events.length; i++) {
-            String description = events[i].getDescription();
-            osNames[i] = description.substring(description.indexOf(" ", description.indexOf(" ") + 1) + 1, description.lastIndexOf(" released")); // Extract full name
-        }
+        // Extract OS names using a simpler approach
+        String[] osNames = Arrays.stream(events)
+                .map(e -> e.getDescription().replaceAll("macOS \\d+ ", "").replace(" released", ""))
+                .sorted()
+                .toArray(String[]::new);
 
-        Arrays.sort(osNames); // Sort alphabetically
         System.out.println("In alphabetical order: " + Arrays.toString(osNames));
     }
 }

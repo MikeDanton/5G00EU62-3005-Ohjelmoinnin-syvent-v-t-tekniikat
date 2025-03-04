@@ -8,15 +8,16 @@ import java.util.*;
 public class CSVEventProvider implements EventProvider {
     private final Path csvFilePath;
     private final List<Event> events;
+    private final String identifier;
 
     public CSVEventProvider(String fileName) {
         Path homeDir = Paths.get(System.getProperty("user.home"), ".today");
         this.csvFilePath = homeDir.resolve(fileName);
+        this.identifier = fileName; // Use file name as a unique identifier
         this.events = new ArrayList<>();
 
         if (!Files.exists(csvFilePath)) {
-            System.err.println("Error: CSV file not found at " + csvFilePath);
-            System.exit(1);
+            throw new IllegalArgumentException("CSV file not found: " + csvFilePath);
         }
 
         loadEvents(); // Load events on initialization
@@ -35,14 +36,13 @@ public class CSVEventProvider implements EventProvider {
                 events.add(new Event(date, description, new Category(primaryCategory, secondaryCategory)));
             }
         } catch (IOException e) {
-            System.err.println("Error reading CSV file: " + e.getMessage());
-            System.exit(1);
+            throw new RuntimeException("Error reading CSV file: " + e.getMessage(), e);
         }
     }
 
     @Override
     public List<Event> getEvents() {
-        return events;
+        return new ArrayList<>(events); // Return a copy to prevent external modification
     }
 
     @Override
@@ -65,5 +65,10 @@ public class CSVEventProvider implements EventProvider {
             }
         }
         return filteredEvents;
+    }
+
+    @Override
+    public String getIdentifier() {
+        return identifier;
     }
 }
